@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Score Predictor</title>
+  <style>
+    :root[data-theme="light"] {
+      --bg: #eef1fb;
+      --card-bg: #ffffff;
+      --text: #1a1a2e;
+      --subtext: #5a5f80;
+      --accent: #4361ee;
+      --accent-hover: #3451d1;
+      --accent-dim: rgba(67,97,238,0.10);
+      --input-bg: #f5f7ff;
+      --input-border: #d0d6f0;
+      --input-focus: #4361ee;
+      --result-bg: linear-gradient(135deg,#eef1ff 0%,#e8edff 100%);
+      --result-border: #4361ee;
+      --error-bg: #fff2f2;
+      --error-border: #e63946;
+      --error-text: #c1121f;
+      --shadow: 0 12px 40px rgba(67,97,238,0.13);
+      --section-bg: #f8faff;
+      --section-border: #e4e9f8;
+      --bar-track: #e0e5ff;
+      --bar-fill: linear-gradient(90deg,#4361ee,#738bff);
+      --grade-bg: rgba(67,97,238,0.08);
+      --slider-thumb: #4361ee;
+      --tag-bg: #e8edff;
+      --tag-text: #4361ee;
+      --tag-active: #4361ee;
+      --tag-active-text: #fff;
+    }
+    :root[data-theme="dark"] {
+      --bg: #0b0d1a;
+      --card-bg: #131526;
+      --text: #e4e8ff;
+      --subtext: #7880aa;
+      --accent: #738bff;
+      --accent-hover: #5a72ff;
+      --accent-dim: rgba(115,139,255,0.12);
+      --input-bg: #1a1d30;
+      --input-border: #2a2f50;
+      --input-focus: #738bff;
+      --result-bg: linear-gradient(135deg,#151929 0%,#181c30 100%);
+      --result-border: #738bff;
+      --error-bg: #1e1018;
+      --error-border: #e63946;
+      --error-text: #ff7b82;
+      --shadow: 0 12px 40px rgba(0,0,0,0.55);
+      --section-bg: #111323;
+      --section-border: #222540;
+      --bar-track: #1a1d30;
+      --bar-fill: linear-gradient(90deg,#4361ee,#738bff);
+      --grade-bg: rgba(115,139,255,0.10);
+      --slider-thumb: #738bff;
+      --tag-bg: #1a1d30;
+      --tag-text: #7880aa;
+      --tag-active: #738bff;
+      --tag-active-text: #fff;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 28px 16px 48px;
+      transition: background .3s, color .3s;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* ── top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .brand {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      color: var(--subtext);
+      text-transform: uppercase;
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-label {
+      font-size: 12px;
+      color: var(--subtext);
+      font-weight: 500;
+    }
+    .toggle {
+      position: relative; width: 46px; height: 24px; cursor: pointer;
+    }
+    .toggle input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position:absolute; inset:0;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: 999px;
+      transition: background .3s, border-color .3s;
+    }
+    .toggle-knob {
+      position:absolute; top:3px; left:3px;
+      width:16px; height:16px; border-radius:50%;
+      background: var(--accent);
+      transition: transform .3s;
+      display:flex; align-items:center; justify-content:center;
+      font-size:9px;
+    }
+    .toggle input:checked ~ .toggle-track .toggle-knob { transform: translateX(22px); }
+
+    /* ── card ── */
+    .card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+      transition: background .3s, box-shadow .3s;
+    }
+
+    .card-header { text-align:center; margin-bottom:28px; }
+    .card-icon { font-size:44px; display:block; margin-bottom:10px; }
+    .card-title { font-size:24px; font-weight:800; letter-spacing:-.5px; margin-bottom:5px; }
+    .card-sub { font-size:13.5px; color:var(--subtext); }
+
+    hr.sep {
+      border:none; height:1px;
+      background:var(--section-border);
+      margin: 0 0 24px;
+    }
+
+    /* ── section ── */
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--subtext);
+      margin-bottom: 14px;
+    }
+
+    .fields { display:flex; flex-direction:column; gap:18px; }
+
+    /* ── field row ── */
+    .field { display:flex; flex-direction:column; gap:7px; }
+    .field-head {
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .field-name {
+      font-size:13px; font-weight:600; color:var(--text);
+      display:flex; align-items:center; gap:5px;
+    }
+    .field-name .ico { font-size:15px; }
+    .field-hint { font-size:11.5px; color:var(--subtext); }
+    .field-value {
+      font-size:13px; font-weight:700; color:var(--accent);
+      min-width:36px; text-align:right;
+    }
+
+    /* number inputs */
+    .num-input {
+      width:100%; padding:11px 14px;
+      background:var(--input-bg); color:var(--text);
+      border:1.5px solid var(--input-border);
+      border-radius:10px; font-size:15px; font-family:inherit;
+      outline:none;
+      transition: border-color .2s, background .3s;
+      -moz-appearance:textfield;
+    }
+    .num-input::-webkit-outer-spin-button,
+    .num-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+    .num-input:focus { border-color:var(--input-focus); }
+
+    /* ── slider ── */
+    .slider-row { display:flex; align-items:center; gap:10px; }
+    input[type=range] {
+      flex:1; -webkit-appearance:none; appearance:none;
+      height:5px; border-radius:999px;
+      background: var(--bar-track);
+      outline:none; cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none; appearance:none;
+      width:18px; height:18px; border-radius:50%;
+      background:var(--slider-thumb);
+      border:3px solid var(--card-bg);
+      box-shadow:0 0 0 1.5px var(--slider-thumb);
+      cursor:pointer;
+    }
+    input[type=range]::-moz-range-thumb {
+      width:18px; height:18px; border-radius:50%;
+      background:var(--slider-thumb);
+      border:3px solid var(--card-bg);
+      cursor:pointer;
+    }
+    .slider-ends {
+      display:flex; justify-content:space-between;
+      font-size:10.5px; color:var(--subtext);
+      margin-top:2px;
+    }
+
+    /* ── subject tags ── */
+    .tags { display:flex; gap:8px; }
+    .tag-btn {
+      flex:1; padding:9px 0;
+      border:1.5px solid var(--input-border);
+      background:var(--tag-bg); color:var(--tag-text);
+      border-radius:10px; font-size:13px; font-weight:600;
+      cursor:pointer; font-family:inherit;
+      text-align:center;
+      transition: background .18s, color .18s, border-color .18s;
+    }
+    .tag-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .tag-btn.active {
+      background:var(--tag-active); color:var(--tag-active-text);
+      border-color:var(--tag-active);
+    }
+    input[name=subject] { display:none; }
+
+    /* ── predict button ── */
+    .predict-btn {
+      width:100%; padding:14px;
+      background:var(--accent); color:#fff;
+      border:none; border-radius:12px;
+      font-size:15.5px; font-weight:700; font-family:inherit;
+      cursor:pointer; margin-top:8px;
+      transition: background .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 4px 14px rgba(67,97,238,0.30);
+    }
+    .predict-btn:hover { background:var(--accent-hover); box-shadow:0 6px 20px rgba(67,97,238,0.38); }
+    .predict-btn:active { transform:scale(.98); }
+
+    /* ── error ── */
+    .error-box {
+      padding:13px 16px;
+      background:var(--error-bg); color:var(--error-text);
+      border:1.5px solid var(--error-border);
+      border-radius:11px; font-size:13.5px;
+      margin-top:14px; animation: up .3s ease;
+    }
+
+    /* ── result ── */
+    .result-card {
+      margin-top:20px;
+      background:var(--result-bg);
+      border:1.5px solid var(--result-border);
+      border-radius:16px; padding:24px 22px;
+      animation: up .4s cubic-bezier(.22,1,.36,1);
+    }
+    .result-top {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:16px;
+    }
+    .result-score-block {}
+    .result-lbl {
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.8px; color:var(--subtext); margin-bottom:2px;
+    }
+    .result-score {
+      font-size:58px; font-weight:900; color:var(--accent);
+      letter-spacing:-3px; line-height:1;
+    }
+    .result-denom { font-size:18px; font-weight:500; color:var(--subtext); }
+    .grade-badge {
+      display:flex; flex-direction:column; align-items:center;
+      background:var(--grade-bg); border-radius:12px; padding:10px 18px;
+    }
+    .grade-letter {
+      font-size:32px; font-weight:900; color:var(--accent); line-height:1;
+    }
+    .grade-text {
+      font-size:10.5px; font-weight:600; color:var(--subtext);
+      text-transform:uppercase; letter-spacing:.5px; margin-top:2px;
+    }
+    .bar-wrap { margin-top:4px; }
+    .bar-track {
+      height:7px; background:var(--bar-track); border-radius:999px; overflow:hidden;
+    }
+    .bar-fill {
+      height:100%; background:var(--bar-fill);
+      border-radius:999px;
+      transition: width .9s cubic-bezier(.22,1,.36,1);
+    }
+    .bar-ends {
+      display:flex; justify-content:space-between;
+      font-size:10.5px; color:var(--subtext); margin-top:3px;
+    }
+
+    /* ── factor chips ── */
+    .factors {
+      display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;
+      padding-top:14px; border-top:1px solid var(--section-border);
+    }
+    .chip {
+      display:flex; align-items:center; gap:4px;
+      background:var(--input-bg); border:1px solid var(--section-border);
+      border-radius:999px; padding:4px 10px;
+      font-size:11.5px; color:var(--subtext); font-weight:500;
+    }
+    .chip .ico { font-size:13px; }
+
+    @keyframes up {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- top bar -->
+  <div class="topbar">
+    <span class="brand">Score Predictor</span>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="theme-lbl">Light</span>
+      <label class="toggle" aria-label="Toggle dark mode">
+        <input type="checkbox" id="theme-cb" onchange="setTheme(this.checked)">
+        <div class="toggle-track">
+          <div class="toggle-knob" id="theme-ico">☀️</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- main card -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-icon">🎓</span>
+      <h1 class="card-title">Student Score Predictor</h1>
+      <p class="card-sub">Fill in your habits below to predict your exam score</p>
+    </div>
+
+    <hr class="sep">
+
+    <form method="POST" action="/" id="pred-form">
+      <div class="fields">
+
+        <!-- Hours studied -->
+        <div class="field">
+          <div class="field-head">
+            <span class="field-name"><span class="ico">📚</span> Study Hours <span class="field-hint">per day</span></span>
+            <span class="field-value" id="val-hours">
+              {{ form_data.hours if form_data.hours is defined and form_data.hours != '' else '—' }}
+            </span>
+          </div>
+          <div class="slider-row">
+            <input type="range" name="hours" id="sl-hours"
+              min="0" max="16" step="0.5"
+              value="{{ form_data.hours if form_data.hours is defined and form_data.hours != '' else 5 }}"
+              oninput="sync('hours', this.value, 'h')">
+          </div>
+          <div class="slider-ends"><span>0h</span><span>16h</span></div>
+        </div>
+
+        <!-- Sleep hours -->
+        <div class="field">
+          <div class="field-head">
+            <span class="field-name"><span class="ico">😴</span> Sleep Hours <span class="field-hint">per night</span></span>
+            <span class="field-value" id="val-sleep">
+              {{ form_data.sleep if form_data.sleep is defined and form_data.sleep != '' else '—' }}
+            </span>
+          </div>
+          <div class="slider-row">
+            <input type="range" name="sleep" id="sl-sleep"
+              min="3" max="12" step="0.5"
+              value="{{ form_data.sleep if form_data.sleep is defined and form_data.sleep != '' else 7 }}"
+              oninput="sync('sleep', this.value, 'h')">
+          </div>
+          <div class="slider-ends"><span>3h</span><span>12h</span></div>
+        </div>
+
+        <!-- Revision sessions -->
+        <div class="field">
+          <div class="field-head">
+            <span class="field-name"><span class="ico">🔁</span> Revision Sessions <span class="field-hint">total</span></span>
+            <span class="field-value" id="val-revisions">
+              {{ form_data.revisions if form_data.revisions is defined and form_data.revisions != '' else '—' }}
+            </span>
+          </div>
+          <div class="slider-row">
+            <input type="range" name="revisions" id="sl-revisions"
+              min="0" max="20" step="1"
+              value="{{ form_data.revisions if form_data.revisions is defined and form_data.revisions != '' else 5 }}"
+              oninput="sync('revisions', this.value, '')">
+          </div>
+          <div class="slider-ends"><span>0</span><span>20</span></div>
+        </div>
+
+        <!-- Stress level -->
+        <div class="field">
+          <div class="field-head">
+            <span class="field-name"><span class="ico">😤</span> Stress Level</span>
+            <span class="field-value" id="val-stress">
+              {{ form_data.stress if form_data.stress is defined and form_data.stress != '' else '—' }}<span style="font-size:11px;font-weight:400;color:var(--subtext)">/10</span>
+            </span>
+          </div>
+          <div class="slider-row">
+            <input type="range" name="stress" id="sl-stress"
+              min="1" max="10" step="1"
+              value="{{ form_data.stress if form_data.stress is defined and form_data.stress != '' else 5 }}"
+              oninput="sync('stress', this.value, '/10')">
+          </div>
+          <div class="slider-ends"><span>1 Calm</span><span>10 Overwhelmed</span></div>
+        </div>
+
+        <!-- Subject difficulty -->
+        <div class="field">
+          <div class="field-head">
+            <span class="field-name"><span class="ico">📖</span> Subject Difficulty</span>
+          </div>
+          <div class="tags">
+            <button type="button" class="tag-btn {% if form_data.subject == 'easy' %}active{% endif %}"
+              onclick="pickSubject('easy', this)">😊 Easy</button>
+            <button type="button" class="tag-btn {% if form_data.subject == 'moderate' or not form_data.subject %}active{% endif %}"
+              onclick="pickSubject('moderate', this)">🤔 Moderate</button>
+            <button type="button" class="tag-btn {% if form_data.subject == 'hard' %}active{% endif %}"
+              onclick="pickSubject('hard', this)">🔥 Hard</button>
+          </div>
+          <input type="hidden" name="subject" id="subject-val"
+            value="{{ form_data.subject if form_data.subject else 'moderate' }}">
+        </div>
+
+      </div><!-- /fields -->
+
+      <button type="submit" class="predict-btn">Predict My Score →</button>
+    </form>
+
+    {% if error %}
+    <div class="error-box">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if predicted_score is not none %}
+    <div class="result-card">
+      <div class="result-top">
+        <div class="result-score-block">
+          <div class="result-lbl">Predicted Score</div>
+          <div class="result-score">{{ predicted_score }}<span class="result-denom">/100</span></div>
+        </div>
+        <div class="grade-badge">
+          <div class="grade-letter">{{ grade }}</div>
+          <div class="grade-text">{{ grade_label }}</div>
+        </div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-track">
+          <div class="bar-fill" style="width:{{ predicted_score }}%"></div>
+        </div>
+        <div class="bar-ends"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+      <div class="factors">
+        <span class="chip"><span class="ico">📚</span> {{ form_data.hours }}h studied</span>
+        <span class="chip"><span class="ico">😴</span> {{ form_data.sleep }}h sleep</span>
+        <span class="chip"><span class="ico">🔁</span> {{ form_data.revisions }} revisions</span>
+        <span class="chip"><span class="ico">😤</span> Stress {{ form_data.stress }}/10</span>
+        <span class="chip"><span class="ico">📖</span>
+          {% if form_data.subject == 'hard' %}🔥 Hard
+          {% elif form_data.subject == 'easy' %}😊 Easy
+          {% else %}🤔 Moderate{% endif %}
+        </span>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /card -->
+</div>
+
+<script>
+  function sync(field, val, suffix) {
+    const el = document.getElementById('val-' + field);
+    if (el) {
+      if (field === 'stress') {
+        el.innerHTML = val + '<span style="font-size:11px;font-weight:400;color:var(--subtext)">/10</span>';
+      } else {
+        el.textContent = val + suffix;
+      }
+    }
+  }
+
+  function pickSubject(val, btn) {
+    document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('subject-val').value = val;
+  }
+
+  function setTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.getElementById('theme-lbl').textContent = dark ? 'Dark' : 'Light';
+    document.getElementById('theme-ico').textContent = dark ? '🌙' : '☀️';
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+
+  // init theme
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    const cb = document.getElementById('theme-cb');
+    cb.checked = true;
+    setTheme(true);
+  }
+
+  // init slider displays
+  ['hours','sleep','revisions','stress'].forEach(function(f) {
+    const sl = document.getElementById('sl-' + f);
+    if (sl) {
+      const suffixes = {hours:'h', sleep:'h', revisions:'', stress:'/10'};
+      sync(f, sl.value, suffixes[f]);
+    }
+  });
+</script>
+</body>
+</html>
